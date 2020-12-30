@@ -130,9 +130,9 @@ class Game extends React.Component {
       }
     })();
     const moves = histories.map((step, index) => {
-      const desc = index !== 0 ? `[${ index }] col: ${ step.col }, row: ${ step.row }` : 'Go to game start';
+      const desc = index !== 0 ? `col: ${ step.col }, row: ${ step.row }` : 'Go to game start';
       return (
-        <li key={ index }>
+        <li key={ index } class={ index === this.state.stepNumber ? 'current-history' : '' }>
           <button onClick={ () => this.jumpTo(index) }>{ desc }</button>
         </li>
       );
