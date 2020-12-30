@@ -12,71 +12,20 @@ function Square(props) {
   );
 }
 
-function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] !== null && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
-    }
-  }
-  return null;
-}
-
 class Board extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      squares: Array(9).fill(null),
-      xIsNext: true,
-    };
-  }
 
   renderSquare(i) {
     return (
       <Square
-        value={ this.state.squares[i] }
-        onClick={ () => { this.handleClick(i) } }
+        value={ this.props.squares[i] }
+        onClick={ () => { this.props.onClick(i) } }
       />
     );
   }
 
-  handleClick(i) {
-    const squares = this.state.squares.slice();
-    if (squares[i] !== null || calculateWinner(squares) !== null) {
-      return;
-    }
-
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
-
-    this.setState({
-      squares: squares,
-      xIsNext: !this.state.xIsNext,
-    });
-  }
-
   render() {
-    const winner = calculateWinner(this.state.squares);
-    const status = (() => {
-      if (winner !== null) {
-        return `Winner: ${ winner }`;
-      } else {
-        return `Next player: ${ this.state.xIsNext ? 'X' : 'O' }`;
-      }
-    })();
     return (
       <div>
-        <div className="status">{ status }</div>
         <div className="board-row">
           { this.renderSquare(0) }
           { this.renderSquare(1) }
@@ -98,16 +47,92 @@ class Board extends React.Component {
 
 }
 
+function calculateWinner(squares) {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] !== null && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
+}
+
 class Game extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      histories: [{ squares: Array(9).fill(null) }],
+      stepNumber: 0,
+      xIsNext: true,
+    };
+  }
+
+  handleClick(i) {
+    const histories = this.state.histories.slice(0, this.state.stepNumber + 1);
+    const current = histories[ histories.length - 1 ];
+    const squares = current.squares.slice();
+    if (squares[i] !== null || calculateWinner(squares) !== null) {
+      return;
+    }
+
+    squares[i] = this.state.xIsNext ? 'X' : 'O';
+
+    this.setState({
+      histories: histories.concat([{ squares: squares }]),
+      stepNumber: histories.length,
+      xIsNext: !this.state.xIsNext,
+    });
+  }
+
+  jumpTo(step) {
+    this.setState({
+      stepNumber: step,
+      xIsNext: (step % 2) === 0,
+    });
+  }
+
   render() {
+    const histories = this.state.histories;
+    const current = histories[ this.state.stepNumber ];
+    const winner = calculateWinner(current.squares);
+    const status = (() => {
+      if (winner !== null) {
+        return `Winner: ${ winner }`;
+      } else {
+        return `Next player: ${ this.state.xIsNext ? 'X' : 'O' }`;
+      }
+    })();
+    const moves = histories.map((step, index) => {
+      const desc = index !== 0 ? `Go to move #${ index } ` : 'Go to game start';
+      return (
+        <li key={ index }>
+          <button onClick={ () => this.jumpTo(index) }>{ desc }</button>
+        </li>
+      );
+    });
+
     return (
       <div className="game">
         <div className="game-board">
-          <Board />
+          <Board
+            squares={ current.squares }
+            onClick={ i => this.handleClick(i) }
+          />
         </div>
         <div className="game-info">
-          <div>{/* status */}</div>
-          <ol>{/* TODO */}</ol>
+          <div>{ status }</div>
+          <ol>{ moves }</ol>
         </div>
       </div>
     );
